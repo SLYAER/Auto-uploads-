@@ -1,0 +1,57 @@
+name: 🤖 24/7 AutoShorts Bot
+
+on:
+  schedule:
+    # Runs every 4 hours automatically to stay within GH Free limitations
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Allows you to press a "Run Workflow" button manually in the UI
+
+permissions:
+  contents: write # Needed so the script can commit its download history memory back
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install System Dependencies (ImageMagick & OpenCV)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick ffmpeg libsm6 libxext6
+          # Bypass ImageMagick security policy so MoviePy TextClip works!
+          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+
+      - name: Install Python Dependencies
+        run: pip install -r python_bot/requirements.txt
+
+      - name: Prepare Architecture & Memory Bank
+        run: |
+          mkdir -p python_bot/data/raw_videos python_bot/data/processed python_bot/data/ready_to_upload python_bot/assets
+          touch python_bot/data/download_history.txt
+
+      - name: Inject Google Secrets securely (DO NOT COMMIT THESE FILES)
+        run: |
+          echo '${{ secrets.GCP_CREDENTIALS }}' > python_bot/credentials.json
+          echo '${{ secrets.YOUTUBE_TOKEN }}' > python_bot/token.json
+
+      - name: Execute The Bot!
+        env:
+          GITHUB_ACTIONS: "true" # The python file reads this and exits cleanly
+        run: |
+          cd python_bot
+          python main.py
+
+      - name: Save memory bank back to Github (Anti-Repeat)
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add python_bot/data/download_history.txt
+          git commit -m "Auto-update memory archive [skip ci]" || echo "No changes to commit"
+          git push
