@@ -32,3 +32,23 @@ def download_videos(query: str, max_results: int = 1, output_dir: str = 'data/ra
         ydl.download([f'ytsearch50:{query}'])
         
     return downloaded_paths
+
+def download_satisfying_background(output_path: str):
+    """
+    Automatically downloads a royalty-free satisfying video (e.g., GTA 5 racing or Minecraft parkour).
+    """
+    print("[*] Satisfying background missing. Auto-downloading to self-heal...")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4',
+        'outtmpl': output_path, # Force exact output name
+        'noplaylist': True,
+        'max_downloads': 1,
+    }
+    
+    query = "GTA 5 satisfying gameplay funny moments no copyright"
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([f'ytsearch1:{query}'])
+    
+    print(f"[*] Successfully downloaded background video to {output_path}")

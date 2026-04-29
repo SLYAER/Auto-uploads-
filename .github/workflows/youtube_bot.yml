@@ -44,6 +44,7 @@ jobs:
       - name: Execute The Bot!
         env:
           GITHUB_ACTIONS: "true" # The python file reads this and exits cleanly
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           cd python_bot
           python main.py
